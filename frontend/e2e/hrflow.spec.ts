@@ -20,6 +20,56 @@ async function navigate(page: import('@playwright/test').Page, name: RegExp) {
 }
 
 test.describe('HRFlow réel', () => {
+  test('mot de passe oublié et réinitialisation complète via Mailpit', async ({
+    page,
+    request,
+  }) => {
+    const resetEmail = 'admin@hrflow.local';
+    const newPassword = 'NewAdminPassword!2026';
+    await page.goto('/mot-de-passe-oublie');
+    const submit = page.getByRole('button', { name: 'Envoyer le lien' });
+    await expect(submit).toBeDisabled();
+    await page.getByLabel('Adresse email').fill(resetEmail);
+    await expect(submit).toBeEnabled();
+    await submit.click();
+    await expect(page.getByText('Si le compte existe, un email a été envoyé.')).toBeVisible();
+
+    let token = '';
+    await expect
+      .poll(
+        async () => {
+          const list = await (await request.get('http://127.0.0.1:8025/api/v1/messages')).json();
+          const summary = (list.messages ?? []).find(
+            (item: { To?: { Address: string }[]; Subject: string }) =>
+              item.To?.some((recipient) => recipient.Address === resetEmail) &&
+              item.Subject.includes('Réinitialisation'),
+          );
+          token =
+            /reset-password\?token=([A-Za-z0-9_-]+)/.exec(summary?.Snippet ?? '')?.[1] ?? '';
+          return token;
+        },
+        { timeout: 15_000 },
+      )
+      .not.toBe('');
+
+    await page.goto(`/reset-password?token=${token}`);
+    await expect(page.getByText('Adresse email')).toHaveCount(0);
+    const reset = page.getByRole('button', { name: 'Réinitialiser' });
+    await expect(reset).toBeDisabled();
+    await page.getByLabel('Nouveau mot de passe', { exact: true }).fill(newPassword);
+    await page.getByLabel('Confirmer le mot de passe', { exact: true }).fill(newPassword);
+    await expect(reset).toBeEnabled();
+    const axe = await new AxeBuilder({ page }).analyze();
+    expect(axe.violations).toEqual([]);
+    await reset.click();
+    await expect(page).toHaveURL(/\/connexion\?reset=success/);
+    await expect(page.getByText(/mot de passe a été réinitialisé/)).toBeVisible();
+    await page.getByLabel('Adresse email').fill(resetEmail);
+    await page.getByLabel(/Mot de passe/).fill(newPassword);
+    await page.getByRole('button', { name: 'Se connecter' }).click();
+    await expect(page).toHaveURL(/\/app/);
+  });
+
   test('inscription, email Mailpit, vérification, login et profil réel', async ({
     page,
     request,
@@ -36,7 +86,9 @@ test.describe('HRFlow réel', () => {
         async () => {
           const list = await (await request.get('http://127.0.0.1:8025/api/v1/messages')).json();
           for (const summary of list.messages ?? []) {
-            if (summary.To?.some((recipient: { Address: string }) => recipient.Address === registered))
+            if (
+              summary.To?.some((recipient: { Address: string }) => recipient.Address === registered)
+            )
               token = /verify-email\?token=([A-Za-z0-9_-]+)/.exec(summary.Snippet ?? '')?.[1] ?? '';
           }
           return token;
