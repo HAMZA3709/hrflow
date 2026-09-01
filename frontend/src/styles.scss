@@ -1,1 +1,488 @@
-/* You can add global styles to this file, and also import other style files */
+:root {
+  --ink: #17221c;
+  --muted: #647069;
+  --brand: #15704b;
+  --brand-dark: #0c5135;
+  --accent: #d8f3e5;
+  --surface: #fff;
+  --canvas: #f4f7f5;
+  --line: #dce5df;
+  --danger: #b3293c;
+  --radius: 14px;
+  --shadow: 0 12px 35px rgba(20, 48, 35, 0.08);
+}
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  height: 100%;
+}
+body {
+  margin: 0;
+  background: var(--canvas);
+  color: var(--ink);
+  font:
+    15px/1.5 'DM Sans',
+    sans-serif;
+}
+h1,
+h2,
+.brand {
+  font-family: Manrope, sans-serif;
+}
+h1 {
+  font-size: clamp(1.8rem, 4vw, 2.5rem);
+  margin: 0.15rem 0;
+}
+h2 {
+  font-size: 1.05rem;
+  margin: 0 0 0.75rem;
+}
+a {
+  color: var(--brand-dark);
+}
+button,
+.button {
+  border: 0;
+  border-radius: 9px;
+  background: var(--brand);
+  color: #fff;
+  padding: 0.72rem 1rem;
+  font: 600 inherit;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+}
+button:hover,
+.button:hover {
+  background: var(--brand-dark);
+}
+button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+button.secondary {
+  background: #edf3ef;
+  color: var(--ink);
+}
+button.danger {
+  background: #fbeaec;
+  color: var(--danger);
+}
+button.icon {
+  background: transparent;
+  color: var(--ink);
+  padding: 0.5rem;
+  font-size: 1.2rem;
+}
+:focus-visible {
+  outline: 3px solid #e39a20;
+  outline-offset: 2px;
+}
+label {
+  font-weight: 600;
+  display: grid;
+  gap: 0.35rem;
+}
+input,
+select,
+textarea {
+  width: 100%;
+  border: 1px solid #bdcac2;
+  border-radius: 9px;
+  padding: 0.7rem;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+}
+textarea {
+  min-height: 110px;
+  resize: vertical;
+}
+.muted,
+small {
+  color: var(--muted);
+}
+small {
+  display: block;
+}
+.brand {
+  font-size: 1.5rem;
+  font-weight: 700;
+  text-decoration: none;
+  color: var(--ink);
+}
+.brand span,
+.eyebrow {
+  color: var(--brand);
+}
+.eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-weight: 700;
+  font-size: 0.73rem;
+  margin: 0;
+}
+.public {
+  min-height: 100vh;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 1.5rem;
+  padding: 1rem;
+  background: radial-gradient(circle at 20% 10%, #dff5e9, transparent 35%), var(--canvas);
+}
+.auth-card {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  box-shadow: var(--shadow);
+  padding: clamp(1.5rem, 4vw, 2.5rem);
+  width: min(440px, calc(100vw - 2rem));
+}
+.auth-card form {
+  display: grid;
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+.password {
+  display: flex;
+  align-items: center;
+}
+.password input {
+  flex: 1;
+}
+.auth-links {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.alert {
+  padding: 0.8rem;
+  border-radius: 9px;
+  margin: 1rem 0;
+}
+.alert.error,
+.state.error {
+  background: #fbeaec;
+  color: #871b2b;
+}
+.alert.success {
+  background: var(--accent);
+  color: #0d5637;
+}
+.shell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 250px 1fr;
+}
+.shell aside {
+  background: #10251b;
+  padding: 1.5rem;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+.shell aside .brand {
+  color: #fff;
+}
+.shell aside .brand span {
+  color: #79d6aa;
+}
+.shell nav {
+  display: grid;
+  gap: 0.35rem;
+  margin-top: 2.5rem;
+}
+.shell nav a {
+  color: #bed0c6;
+  text-decoration: none;
+  padding: 0.75rem;
+  border-radius: 9px;
+  display: flex;
+  gap: 0.7rem;
+}
+.shell nav a:hover,
+.shell nav a.active {
+  background: #1d4935;
+  color: #fff;
+}
+.workspace {
+  min-width: 0;
+}
+.workspace > header {
+  height: 72px;
+  background: #fff;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 1rem;
+  padding: 0 2rem;
+}
+.workspace > header .icon {
+  display: none;
+}
+.workspace > header div {
+  text-align: right;
+}
+.workspace main {
+  padding: clamp(1rem, 3vw, 2.5rem);
+  max-width: 1450px;
+  margin: auto;
+}
+.page-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.7rem;
+}
+.stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+}
+.stats article,
+.panel {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  box-shadow: 0 3px 15px rgba(20, 48, 35, 0.03);
+}
+.stats span {
+  color: var(--muted);
+}
+.stats strong {
+  display: block;
+  font: 700 2rem Manrope;
+  margin-top: 0.5rem;
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+.bar {
+  display: grid;
+  grid-template-columns: 130px 1fr 30px;
+  gap: 0.7rem;
+  align-items: center;
+  margin: 0.85rem 0;
+}
+meter {
+  width: 100%;
+  height: 12px;
+}
+.toolbar,
+.inline-form {
+  display: flex;
+  align-items: end;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+.toolbar label {
+  min-width: 190px;
+}
+.table-wrap {
+  overflow: auto;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+th,
+td {
+  padding: 0.9rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid var(--line);
+}
+th {
+  background: #f0f5f2;
+  color: #46534c;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+}
+.badge {
+  display: inline-block;
+  padding: 0.25rem 0.55rem;
+  border-radius: 99px;
+  background: var(--accent);
+  color: #0d5637;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.badge.off,
+.status-rejected,
+.status-cancelled {
+  background: #eee;
+  color: #555;
+}
+.status-pending {
+  background: #fff1cc;
+  color: #765200;
+}
+.state {
+  padding: 3rem;
+  text-align: center;
+  color: var(--muted);
+  background: #fff;
+  border: 1px dashed var(--line);
+  border-radius: var(--radius);
+}
+.pager,
+.actions,
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.7rem;
+}
+.pager {
+  margin-top: 1rem;
+}
+.actions {
+  justify-content: flex-end;
+  margin-top: 1rem;
+}
+.cards {
+  display: grid;
+  gap: 0.8rem;
+}
+.form-panel {
+  display: grid;
+  gap: 1rem;
+  align-content: start;
+}
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+.employee-form {
+  margin-bottom: 1rem;
+}
+.detail-panel {
+  margin-top: 1rem;
+}
+.link-button {
+  background: transparent;
+  color: var(--brand-dark);
+  padding: 0;
+  text-align: left;
+}
+.link-button:hover {
+  background: transparent;
+  text-decoration: underline;
+}
+.field-error {
+  color: var(--danger);
+}
+.toast {
+  position: fixed;
+  right: 1.5rem;
+  bottom: 1.5rem;
+  background: #153f2d;
+  color: white;
+  padding: 1rem 1.25rem;
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+  z-index: 20;
+}
+.toast.error {
+  background: #8c2031;
+}
+dl {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 0.7rem;
+}
+dt {
+  color: var(--muted);
+}
+dd {
+  margin: 0;
+  font-weight: 600;
+}
+.error-page {
+  min-height: 100vh;
+  display: grid;
+  place-content: center;
+  justify-items: start;
+  padding: 2rem;
+}
+.error-page h1 {
+  font-size: 3rem;
+}
+@media (max-width: 850px) {
+  .shell {
+    display: block;
+  }
+  .shell aside {
+    position: fixed;
+    z-index: 10;
+    width: 260px;
+    transform: translateX(-100%);
+    transition: 0.2s;
+  }
+  .shell aside.open {
+    transform: none;
+  }
+  .workspace > header {
+    padding: 0 1rem;
+  }
+  .workspace > header .icon {
+    display: block;
+    margin-right: auto;
+  }
+  .stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .grid {
+    grid-template-columns: 1fr;
+  }
+  .form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 520px) {
+  .stats {
+    grid-template-columns: 1fr;
+  }
+  .page-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .workspace > header strong {
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+  }
+  .bar {
+    grid-template-columns: 100px 1fr 25px;
+  }
+  .auth-links {
+    display: grid;
+  }
+  .inline-form {
+    display: grid;
+  }
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+  .inline-form label {
+    width: 100%;
+  }
+}
