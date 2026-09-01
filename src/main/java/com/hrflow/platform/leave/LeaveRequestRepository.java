@@ -1,0 +1,3 @@
+package com.hrflow.platform.leave;
+import org.springframework.data.jpa.repository.*; import org.springframework.data.repository.query.Param; import java.time.LocalDate; import java.util.*;
+public interface LeaveRequestRepository extends JpaRepository<LeaveRequest,Long>,JpaSpecificationExecutor<LeaveRequest> { @Query("select count(l)>0 from LeaveRequest l where l.employee.id=:employee and l.status in :statuses and l.startDate<=:end and l.endDate>=:start") boolean overlaps(@Param("employee")Long employee,@Param("start")LocalDate start,@Param("end")LocalDate end,@Param("statuses")Collection<LeaveStatus> statuses); long countByStatus(LeaveStatus status); @Query("select l.status,count(l) from LeaveRequest l group by l.status") List<Object[]> countGroupedByStatus(); }

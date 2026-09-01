@@ -1,0 +1,3 @@
+package com.hrflow.platform.employee;
+import org.springframework.data.domain.*; import org.springframework.data.jpa.repository.*; import java.util.*;
+public interface EmployeeRepository extends JpaRepository<Employee,Long>,JpaSpecificationExecutor<Employee> { boolean existsByEmployeeNumberIgnoreCase(String n); boolean existsByEmployeeNumberIgnoreCaseAndIdNot(String n,Long id); Optional<Employee> findByUserEmailIgnoreCase(String email); Page<Employee> findByManagerId(Long id,Pageable p); long countByActiveTrue(); long countByDepartmentIdAndActiveTrue(Long id); @Query("select e.department.name,count(e) from Employee e group by e.department.name order by e.department.name") List<Object[]> countGroupedByDepartment(); }

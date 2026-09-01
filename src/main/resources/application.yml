@@ -1,0 +1,54 @@
+spring:
+  application:
+    name: hrflow-backend
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate.jdbc.time_zone: UTC
+  flyway:
+    enabled: true
+  mail:
+    host: ${MAIL_HOST}
+    port: ${MAIL_PORT}
+  jackson:
+    time-zone: UTC
+server:
+  port: ${SERVER_PORT:8080}
+  error:
+    include-stacktrace: never
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: when_authorized
+  info:
+    env:
+      enabled: true
+info:
+  app:
+    name: HRFlow
+    version: '@project.version@'
+hrflow:
+  jwt:
+    secret: ${JWT_SECRET}
+    expiration: ${JWT_EXPIRATION:PT1H}
+  frontend-base-url: ${FRONTEND_BASE_URL:http://localhost:4200}
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:4200}
+  tokens:
+    verification-ttl: ${EMAIL_VERIFICATION_TTL:PT24H}
+    reset-ttl: ${PASSWORD_RESET_TTL:PT30M}
+  mail:
+    from: ${MAIL_FROM:HRFlow <no-reply@hrflow.local>}
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
