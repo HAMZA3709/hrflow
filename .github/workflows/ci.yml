@@ -1,0 +1,122 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend · Java 21 / Maven
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      JWT_SECRET: ci-only-test-secret-with-at-least-thirty-two-bytes
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Reject tracked environment files
+        shell: bash
+        run: |
+          tracked_env_files="$(git ls-files | grep -E '(^|/)\.env($|\.)' | grep -v -E '(^|/)\.env\.example$' || true)"
+          if [[ -n "$tracked_env_files" ]]; then
+            echo "Real environment files must not be tracked:"
+            echo "$tracked_env_files"
+            exit 1
+          fi
+
+      - name: Set up Java 21 with Maven cache
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      - name: Verify Docker for Testcontainers
+        run: docker info
+
+      - name: Build and test backend
+        run: ./mvnw clean verify
+
+      - name: Upload Surefire reports on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-surefire-reports
+          path: target/surefire-reports/
+          if-no-files-found: warn
+          retention-days: 7
+
+  frontend:
+    name: Frontend · Node 22 / Angular
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Reject tracked environment files
+        working-directory: .
+        shell: bash
+        run: |
+          tracked_env_files="$(git ls-files | grep -E '(^|/)\.env($|\.)' | grep -v -E '(^|/)\.env\.example$' || true)"
+          if [[ -n "$tracked_env_files" ]]; then
+            echo "Real environment files must not be tracked:"
+            echo "$tracked_env_files"
+            exit 1
+          fi
+
+      - name: Set up Node.js 22 with npm cache
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Prepare frontend diagnostics
+        run: mkdir -p test-results
+
+      - name: Lint frontend
+        shell: bash
+        run: |
+          set -o pipefail
+          npm run lint 2>&1 | tee test-results/lint.log
+
+      - name: Test frontend
+        shell: bash
+        run: |
+          set -o pipefail
+          npm test -- --watch=false 2>&1 | tee test-results/unit-tests.log
+
+      - name: Build production frontend
+        shell: bash
+        run: |
+          set -o pipefail
+          npm run build 2>&1 | tee test-results/production-build.log
+
+      - name: Upload frontend diagnostics on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-diagnostics
+          path: |
+            frontend/test-results/
+            frontend/dist/
+          if-no-files-found: warn
+          retention-days: 7
