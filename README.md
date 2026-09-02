@@ -1,5 +1,7 @@
 # HRFlow Backend
 
+[![CI](https://github.com/HAMZA3709/hrflow/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/HAMZA3709/hrflow/actions/workflows/ci.yml)
+
 Backend REST MVP de gestion RH construit avec Java 21, Spring Boot 3.5, PostgreSQL 17, JPA, Flyway, Spring Security/JWT, Mailpit, Actuator et OpenAPI.
 
 ## Architecture
@@ -52,6 +54,31 @@ curl http://localhost:8080/api/v1/auth/me -H 'Authorization: Bearer ACCESS_TOKEN
 ```
 
 Les tests Testcontainers utilisent PostgreSQL 17 et un vrai serveur Mailpit, jamais H2. Ils ne sont pas désactivés lorsque Docker est absent : le build échoue explicitement. Testcontainers 1.21.4 est requis pour les daemons Docker récents qui refusent l'ancienne négociation d'API 1.32.
+
+## Intégration continue
+
+Le workflow [`.github/workflows/ci.yml`](.github/workflows/ci.yml) s’exécute à chaque push et pull request vers `main`, ainsi que manuellement depuis l’onglet Actions. Deux jobs indépendants permettent d’identifier rapidement la pile en échec :
+
+- **Backend · Java 21 / Maven** utilise Temurin 21, le cache Maven et Docker réel pour exécuter `./mvnw clean verify`, y compris PostgreSQL et Mailpit Testcontainers. Les rapports Surefire sont archivés pendant 7 jours en cas d’échec.
+- **Frontend · Node 22 / Angular** utilise Node 22, le cache npm fondé sur `frontend/package-lock.json`, puis exécute installation reproductible, lint TypeScript strict, tests sans watch et build de production. Les diagnostics disponibles sont archivés en cas d’échec.
+
+Les permissions GitHub sont limitées à `contents: read`. Aucun secret réel ni fichier `.env` n’est lu par la CI. Les deux jobs échouent immédiatement si Git suit accidentellement un `.env` réel ; seul `.env.example` est autorisé. Les anciennes exécutions d’une même branche sont annulées par la règle de concurrence.
+
+Commandes locales équivalentes :
+
+```bash
+# Backend — Docker doit être disponible pour Testcontainers
+./mvnw clean verify
+
+# Frontend
+cd frontend
+npm ci
+npm run lint
+npm test -- --watch=false
+npm run build
+```
+
+En cas d’échec, ouvrir le job concerné dans GitHub Actions, consulter la première commande en erreur, puis télécharger l’artefact `backend-surefire-reports` ou `frontend-diagnostics` lorsqu’il est présent. Reproduire ensuite la commande équivalente localement avec Java 21 ou Node 22 avant de pousser la correction. Ne pas contourner un échec en désactivant un test.
 
 ## Dépannage
 
