@@ -6,6 +6,7 @@ import com.hrflow.platform.security.JwtService;
 import com.hrflow.platform.user.Role;
 import com.hrflow.platform.user.User;
 import com.hrflow.platform.user.UserRepository;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,7 +43,7 @@ class HrflowIntegrationTest {
  @Container static final PostgreSQLContainer<?> postgres=new PostgreSQLContainer<>("postgres:17-alpine");
  @Container static final GenericContainer<?> mailpit=new GenericContainer<>("axllent/mailpit:v1.27").withExposedPorts(1025,8025).waitingFor(Wait.forHttp("/readyz").forPort(8025));
  @DynamicPropertySource static void properties(DynamicPropertyRegistry r){r.add("spring.datasource.url",postgres::getJdbcUrl);r.add("spring.datasource.username",postgres::getUsername);r.add("spring.datasource.password",postgres::getPassword);r.add("spring.mail.host",mailpit::getHost);r.add("spring.mail.port",()->mailpit.getMappedPort(1025));r.add("hrflow.jwt.secret",()->SECRET);r.add("hrflow.frontend-base-url",()->"http://localhost:4200");r.add("hrflow.cv.storage-directory",()->System.getProperty("java.io.tmpdir")+"/hrflow-test-cv");r.add("hrflow.cv.max-size",()->128L);}
- @Autowired MockMvc mvc;@Autowired ObjectMapper json;@Autowired UserRepository users;@Autowired PasswordEncoder encoder;@Autowired JwtService jwt;@Autowired Flyway flyway;@Autowired JdbcTemplate jdbc;
+ @Autowired MockMvc mvc;@Autowired ObjectMapper json;@Autowired UserRepository users;@Autowired PasswordEncoder encoder;@Autowired JwtService jwt;@Autowired Flyway flyway;@Autowired JdbcTemplate jdbc;@Autowired MeterRegistry metrics;
  static String employeeJwt,adminJwt,managerJwt,otherManagerJwt;static Long adminId,departmentId,employeeId,managerEmployeeId;
 
  @Test @Order(1) void flywayRunsOnEmptyPostgresql17(){Assertions.assertEquals(17,jdbc.queryForObject("select current_setting('server_version_num')::int / 10000",Integer.class));Assertions.assertEquals("3",flyway.info().current().getVersion().getVersion());Assertions.assertEquals(3,jdbc.queryForObject("select count(*) from flyway_schema_history where success",Integer.class));Assertions.assertEquals(1,jdbc.queryForObject("select count(*) from information_schema.tables where table_name='applications'",Integer.class));}
@@ -117,6 +118,8 @@ class HrflowIntegrationTest {
   mvc.perform(get("/api/v1/recruitment/dashboard").header("Authorization",bearer(adminJwt))).andExpect(status().isOk()).andExpect(jsonPath("$.hires").value(1)).andExpect(jsonPath("$.totalApplications").value(1));
  }
  @Test @Order(13) void recruitmentRejectionRequiresReason()throws Exception{long offer=body(mvc.perform(post("/api/v1/recruitment/offers").header("Authorization",bearer(adminJwt)).contentType(MediaType.APPLICATION_JSON).content(offerJson("REC-JAVA-02"))).andExpect(status().isCreated()).andReturn()).get("id").asLong();mvc.perform(patch("/api/v1/recruitment/offers/{id}/publish",offer).header("Authorization",bearer(adminJwt))).andExpect(status().isOk());long c=body(mvc.perform(post("/api/v1/recruitment/candidates").header("Authorization",bearer(adminJwt)).contentType(MediaType.APPLICATION_JSON).content(candidateJson("reject@candidate.test"))).andExpect(status().isCreated()).andReturn()).get("id").asLong();long a=body(mvc.perform(post("/api/v1/recruitment/applications").header("Authorization",bearer(adminJwt)).contentType(MediaType.APPLICATION_JSON).content("{\"candidateId\":"+c+",\"jobOfferId\":"+offer+",\"source\":\"DIRECT\"}")).andExpect(status().isCreated()).andReturn()).get("id").asLong();mvc.perform(patch("/api/v1/recruitment/applications/{id}/reject",a).header("Authorization",bearer(adminJwt)).contentType(MediaType.APPLICATION_JSON).content("{\"reason\":\"\"}")).andExpect(status().isBadRequest());mvc.perform(patch("/api/v1/recruitment/applications/{id}/reject",a).header("Authorization",bearer(adminJwt)).contentType(MediaType.APPLICATION_JSON).content("{\"reason\":\"Compétences insuffisantes\"}")).andExpect(status().isOk()).andExpect(jsonPath("$.status").value("REJECTED"));}
+
+ @Test @Order(14) void recruitmentDurationMetricsAreRecorded(){for(String name:List.of("hrflow.recruitment.application.create.duration","hrflow.recruitment.application.transition.duration","hrflow.recruitment.interview.schedule.duration","hrflow.recruitment.cv.upload.duration","hrflow.recruitment.application.hire.duration","hrflow.recruitment.application.reject.duration")){var timer=metrics.find(name).timer();Assertions.assertNotNull(timer,name);Assertions.assertTrue(timer.count()>0,name);}}
 
  private User user(String email,Role role){User u=new User();u.setEmail(email);u.setPasswordHash(encoder.encode(PASSWORD));u.setRole(role);u.setEnabled(true);u.setEmailVerified(true);return users.save(u);}
  private String login(String email)throws Exception{return body(mvc.perform(post("/api/v1/auth/login").contentType(MediaType.APPLICATION_JSON).content("{\"email\":\""+email+"\",\"password\":\""+PASSWORD+"\"}")).andExpect(status().isOk()).andExpect(jsonPath("$.tokenType").value("Bearer")).andReturn()).get("accessToken").asText();}

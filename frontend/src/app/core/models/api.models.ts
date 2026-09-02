@@ -107,3 +107,4 @@ export interface Interview { id:number;applicationId:number;interviewerId:number
 export interface Evaluation { id:number;interviewId:number;evaluatorId:number;technicalScore:number;communicationScore:number;cultureScore:number;recommendation:'STRONG_HIRE'|'HIRE'|'NO_HIRE'|'STRONG_NO_HIRE';comments:string|null;createdAt:string; }
 export interface CvDocument { id:number;candidateId:number;originalFilename:string;contentType:string;size:number;checksum:string;uploadedAt:string; }
 export interface RecruitmentDashboard {activeOffers:number;totalApplications:number;applicationsByStage:Partial<Record<ApplicationStage,number>>;hires:number;rejections:number;averageHiringDays:number;upcomingInterviews:number;}
+export interface RecruitmentAudit {id:number;entityType:string;entityId:number;action:string;actor:string|null;details:string|null;occurredAt:string;}

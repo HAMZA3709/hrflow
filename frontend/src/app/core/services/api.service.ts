@@ -11,7 +11,7 @@ import {
   Page,
   Role,
   User,
-  Application, ApplicationStage, Candidate, CvDocument, Evaluation, Interview, JobOffer, RecruitmentDashboard,
+  Application, ApplicationStage, Candidate, CvDocument, Evaluation, Interview, JobOffer, RecruitmentAudit, RecruitmentDashboard,
 } from '../models/api.models';
 type Params = Record<string, string | number | boolean | undefined | null>;
 @Injectable({ providedIn: 'root' })
@@ -91,11 +91,15 @@ export class ApiService {
   }
   recruitmentDashboard(){return this.http.get<RecruitmentDashboard>(`${environment.apiUrl}/recruitment/dashboard`);}
   jobOffers(p:Params={}){return this.http.get<Page<JobOffer>>(`${environment.apiUrl}/recruitment/offers`,{params:this.params(p)});}
+  jobOffer(id:number){return this.http.get<JobOffer>(`${environment.apiUrl}/recruitment/offers/${id}`);}
   saveJobOffer(v:Omit<JobOffer,'id'|'status'|'departmentName'|'publishedAt'|'createdAt'|'updatedAt'>,id?:number){return id?this.http.put<JobOffer>(`${environment.apiUrl}/recruitment/offers/${id}`,v):this.http.post<JobOffer>(`${environment.apiUrl}/recruitment/offers`,v);}
   offerAction(id:number,action:'publish'|'close'|'cancel'){return this.http.patch<JobOffer>(`${environment.apiUrl}/recruitment/offers/${id}/${action}`,{});}
   candidates(p:Params={}){return this.http.get<Page<Candidate>>(`${environment.apiUrl}/recruitment/candidates`,{params:this.params(p)});}
+  candidate(id:number){return this.http.get<Candidate>(`${environment.apiUrl}/recruitment/candidates/${id}`);}
   saveCandidate(v:Omit<Candidate,'id'|'createdAt'|'updatedAt'>,id?:number){return id?this.http.put<Candidate>(`${environment.apiUrl}/recruitment/candidates/${id}`,v):this.http.post<Candidate>(`${environment.apiUrl}/recruitment/candidates`,v);}
   applications(p:Params={}){return this.http.get<Page<Application>>(`${environment.apiUrl}/recruitment/applications`,{params:this.params(p)});}
+  application(id:number){return this.http.get<Application>(`${environment.apiUrl}/recruitment/applications/${id}`);}
+  applicationAudit(id:number){return this.http.get<Page<RecruitmentAudit>>(`${environment.apiUrl}/recruitment/applications/${id}/audit`);}
   createApplication(v:{candidateId:number;jobOfferId:number;source:string;notes:string|null}){return this.http.post<Application>(`${environment.apiUrl}/recruitment/applications`,v);}
   transitionApplication(id:number,stage:ApplicationStage){return this.http.patch<Application>(`${environment.apiUrl}/recruitment/applications/${id}/stage`,{stage});}
   rejectApplication(id:number,reason:string){return this.http.patch<Application>(`${environment.apiUrl}/recruitment/applications/${id}/reject`,{reason});}
@@ -105,5 +109,7 @@ export class ApiService {
   interviewAction(id:number,action:'cancel'|'complete'){return this.http.patch<Interview>(`${environment.apiUrl}/recruitment/interviews/${id}/${action}`,{});}
   saveEvaluation(v:Omit<Evaluation,'id'|'createdAt'>,id?:number){return id?this.http.put<Evaluation>(`${environment.apiUrl}/recruitment/evaluations/${id}`,v):this.http.post<Evaluation>(`${environment.apiUrl}/recruitment/evaluations`,v);}
   uploadCv(candidateId:number,file:File){const data=new FormData();data.append('file',file);return this.http.post<CvDocument>(`${environment.apiUrl}/recruitment/candidates/${candidateId}/cv`,data);}
+  cvMetadata(candidateId:number){return this.http.get<CvDocument>(`${environment.apiUrl}/recruitment/candidates/${candidateId}/cv/metadata`);}
   downloadCv(candidateId:number){return this.http.get(`${environment.apiUrl}/recruitment/candidates/${candidateId}/cv`,{responseType:'blob'});}
+  deleteCv(candidateId:number){return this.http.delete<void>(`${environment.apiUrl}/recruitment/candidates/${candidateId}/cv`);}
 }

@@ -15,4 +15,5 @@ public final class RecruitmentDtos {private RecruitmentDtos(){}
  public record EvaluationView(Long id,Long interviewId,Long evaluatorId,int technicalScore,int communicationScore,int cultureScore,Recommendation recommendation,String comments,Instant createdAt){}
  public record CvView(Long id,Long candidateId,String originalFilename,String contentType,long size,String checksum,Instant uploadedAt){}
  public record RecruitmentDashboard(long activeOffers,long totalApplications,Map<ApplicationStage,Long>applicationsByStage,long hires,long rejections,double averageHiringDays,long upcomingInterviews){}
+ public record AuditView(Long id,String entityType,Long entityId,String action,String actor, String details,Instant occurredAt){}
 }

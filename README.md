@@ -65,9 +65,11 @@ Les tests Testcontainers utilisent PostgreSQL 17 et un vrai serveur Mailpit, jam
 
 ## Stockage des CV
 
-Les CV sont limités au PDF et à `CV_MAX_SIZE` octets (5 Mio par défaut). Leur signature `%PDF-` est contrôlée, le nom serveur est un UUID, le SHA-256 est conservé et le chemin interne n’est jamais exposé. `CV_STORAGE_DIRECTORY` doit pointer vers un volume local hors dépôt (par défaut `/tmp/hrflow-cv`) et être sauvegardé séparément en production. Le nom d’origine sert uniquement à l’en-tête de téléchargement. Limitation V2 : pas de stockage objet ni d’antivirus asynchrone ; une analyse antivirus est recommandée avant exposition Internet.
+Les CV sont limités au PDF et à `CV_MAX_SIZE` octets (5 Mio par défaut). Leur signature `%PDF-` est contrôlée, le nom serveur est un UUID, le SHA-256 est conservé et le chemin interne n’est jamais exposé. `CV_STORAGE_DIRECTORY` doit pointer vers un volume local hors dépôt (par défaut `/tmp/hrflow-cv`) et être sauvegardé séparément en production. Le nom d’origine sert uniquement à l’en-tête de téléchargement. Limitation V2 : pas de stockage objet ni d’antivirus asynchrone. `CvStorageService` constitue le point d’extension prévu pour brancher un scanner antivirus avant l’écriture et remplacer le stockage local par un adaptateur objet.
 
-Les pages Angular lazy-loaded sont disponibles sous `/app/recrutement` : dashboard, offres et édition, candidats et CV, candidatures, Kanban clavier, entretiens et évaluations. Tous les écrans consomment l’API réelle.
+Les pages Angular lazy-loaded sont disponibles sous `/app/recrutement` : dashboard, listes/détails/édition des offres, candidats et CV, candidatures avec audit, Kanban clavier, entretiens et évaluations. Tous les écrans consomment l’API réelle.
+
+Les timers Micrometer `hrflow.recruitment.application.{create,transition,hire,reject}.duration`, `hrflow.recruitment.interview.schedule.duration` et `hrflow.recruitment.cv.upload.duration` mesurent les opérations importantes sans tag ni donnée personnelle. L’environnement cible reste strictement JDK 21 (`maven.compiler.release=21`) ; une JVM locale plus récente peut exécuter les validations sans changer le bytecode cible.
 
 ## Intégration continue
 

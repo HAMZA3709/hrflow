@@ -367,6 +367,8 @@ th {
 .kanban-card label { margin-top:.7rem; font-size:.8rem; }
 .button.secondary { background:#edf3ef; color:var(--ink); }
 .visually-hidden { position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0; }
+.recruitment-nav { display:flex; gap:.4rem; flex-wrap:wrap; margin-bottom:1.2rem; }
+.recruitment-nav a { padding:.45rem .7rem; border-radius:8px; background:#edf3ef; color:var(--brand-dark); text-decoration:none; font-weight:600; }
 @media(max-width:800px){.form-grid,.stats,.grid{grid-template-columns:1fr}.page-head{align-items:flex-start;flex-direction:column}.kanban{grid-template-columns:repeat(6,82vw)}}
 .form-panel {
   display: grid;
