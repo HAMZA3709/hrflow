@@ -63,6 +63,16 @@ export const routes: Routes = [
           import('./features/leave-requests/leaves-page').then((m) => m.LeavesPage),
       },
       {
+        path: 'recrutement',
+        canActivate: [roleGuard(['ADMIN', 'HR', 'MANAGER', 'EMPLOYEE'])],
+        loadChildren: () => import('./features/recruitment/recruitment.routes'),
+      },
+      {
+        path: 'recrutement',
+        canActivate: [roleGuard(['ADMIN', 'HR', 'MANAGER', 'EMPLOYEE'])],
+        loadChildren: () => import('./features/recruitment/recruitment.routes'),
+      },
+      {
         path: 'profil',
         loadComponent: () => import('./features/profile/profile-page').then((m) => m.ProfilePage),
       },

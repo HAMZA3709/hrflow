@@ -75,4 +75,21 @@ describe('ApiService contracts', () => {
     expect(req.request.body).toEqual({ managerComment: 'Charge' });
     req.flush({});
   });
+
+  it('uses versioned recruitment endpoints and preserves conflict errors', () => {
+    api.transitionApplication(42, 'SCREENING').subscribe();
+    const req = http.expectOne('/api/v1/recruitment/applications/42/stage');
+    expect(req.request.method).toBe('PATCH');
+    expect(req.request.body).toEqual({ stage: 'SCREENING' });
+    req.flush({});
+  });
+
+  it('uploads a CV as multipart data', () => {
+    const file = new File(['%PDF-1.4'], 'unsafe/../cv.pdf', { type: 'application/pdf' });
+    api.uploadCv(7, file).subscribe();
+    const req = http.expectOne('/api/v1/recruitment/candidates/7/cv');
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body instanceof FormData).toBe(true);
+    req.flush({});
+  });
 });

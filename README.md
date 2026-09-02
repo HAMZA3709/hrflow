@@ -2,11 +2,17 @@
 
 [![CI](https://github.com/HAMZA3709/hrflow/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/HAMZA3709/hrflow/actions/workflows/ci.yml)
 
-Backend REST MVP de gestion RH construit avec Java 21, Spring Boot 3.5, PostgreSQL 17, JPA, Flyway, Spring Security/JWT, Mailpit, Actuator et OpenAPI.
+Plateforme RH avec module Recrutement V2, construite avec Java 21, Spring Boot 3.5, Angular standalone, PostgreSQL 17, Flyway, JWT, Mailpit, Actuator et OpenAPI.
 
 ## Architecture
 
-Le code est organisé par fonctionnalité sous `com.hrflow.platform` : `auth`, `user`, `department`, `employee`, `leave`, `dashboard`, `email`, `security`, `config`, `exception` et `common`. Les contrôleurs exposent des DTO, les services portent les transactions et règles métier, et Flyway est l'unique source du schéma (`ddl-auto=validate`). Les dates techniques sont en UTC.
+Le code est organisé par fonctionnalité sous `com.hrflow.platform`, dont `recruitment`. Les contrôleurs exposent uniquement des DTO, les services portent transactions et règles métier, et Flyway est l'unique source du schéma (`ddl-auto=validate`). Les dates techniques sont en UTC. La migration V3 ajoute offres, candidats, candidatures, entretiens, évaluations, métadonnées CV et audit.
+
+### Workflow recrutement
+
+Une offre passe de `DRAFT` à `PUBLISHED`, puis `CLOSED` ou `CANCELLED`. Le pipeline contrôlé suit `APPLIED → SCREENING → INTERVIEW/TECHNICAL_TEST → HR_INTERVIEW → OFFER → HIRED`; `REJECTED` (avec motif) et `WITHDRAWN` sont terminaux. Une embauche exige une étape `OFFER`, un entretien finalisé et une évaluation `HIRE` ou `STRONG_HIRE`. La conversion crée ou réutilise sans doublon le compte et l’employé dans la même transaction. Elle est idempotente. Après une embauche, l’offre est automatiquement clôturée lorsqu’elle n’a plus aucune candidature active ; elle peut sinon être clôturée manuellement.
+
+Permissions : ADMIN et HR gèrent tout ; MANAGER ne voit que ses offres et candidatures et agit sur leurs entretiens ; EMPLOYEE ne voit que les entretiens auxquels il participe et peut les finaliser/évaluer. Les seuls endpoints anonymes sont la liste des offres publiées et la création explicite d’un candidat/candidature sous `/api/v1/recruitment/public`.
 
 ## Prérequis et démarrage
 
@@ -34,6 +40,8 @@ Services locaux : API `http://localhost:8080`, Swagger `http://localhost:8080/sw
 - Employés : CRUD logique, profil personnel et équipe sous `/api/v1/employees`
 - Congés : création, demandes personnelles, filtres, approbation, rejet et annulation sous `/api/v1/leave-requests`
 - Dashboard ADMIN/HR/MANAGER : `GET /api/v1/dashboard/summary`
+- Recrutement : CRUD et actions sous `/api/v1/recruitment/{offers,candidates,applications,interviews,evaluations}`, CV sous `/candidates/{id}/cv`, statistiques sous `/dashboard`
+- Portail candidat : `GET /api/v1/recruitment/public/offers`, `POST /public/candidates`, `POST /public/applications`
 
 Rôles : `ADMIN`, `HR`, `MANAGER`, `EMPLOYEE`. L'API utilise exclusivement `Authorization: Bearer <JWT>`, sans session. Une demande de congé ne peut chevaucher une demande pending/approved ; seul le manager direct (ou HR/ADMIN) décide ; le rejet exige un commentaire ; une annulation employé est limitée aux demandes futures en attente.
 
@@ -54,6 +62,14 @@ curl http://localhost:8080/api/v1/auth/me -H 'Authorization: Bearer ACCESS_TOKEN
 ```
 
 Les tests Testcontainers utilisent PostgreSQL 17 et un vrai serveur Mailpit, jamais H2. Ils ne sont pas désactivés lorsque Docker est absent : le build échoue explicitement. Testcontainers 1.21.4 est requis pour les daemons Docker récents qui refusent l'ancienne négociation d'API 1.32.
+
+## Stockage des CV
+
+Les CV sont limités au PDF et à `CV_MAX_SIZE` octets (5 Mio par défaut). Leur signature `%PDF-` est contrôlée, le nom serveur est un UUID, le SHA-256 est conservé et le chemin interne n’est jamais exposé. `CV_STORAGE_DIRECTORY` doit pointer vers un volume local hors dépôt (par défaut `/tmp/hrflow-cv`) et être sauvegardé séparément en production. Le nom d’origine sert uniquement à l’en-tête de téléchargement. Limitation V2 : pas de stockage objet ni d’antivirus asynchrone. `CvStorageService` constitue le point d’extension prévu pour brancher un scanner antivirus avant l’écriture et remplacer le stockage local par un adaptateur objet.
+
+Les pages Angular lazy-loaded sont disponibles sous `/app/recrutement` : dashboard, listes/détails/édition des offres, candidats et CV, candidatures avec audit, Kanban clavier, entretiens et évaluations. Tous les écrans consomment l’API réelle.
+
+Les timers Micrometer `hrflow.recruitment.application.{create,transition,hire,reject}.duration`, `hrflow.recruitment.interview.schedule.duration` et `hrflow.recruitment.cv.upload.duration` mesurent les opérations importantes sans tag ni donnée personnelle. L’environnement cible reste strictement JDK 21 (`maven.compiler.release=21`) ; une JVM locale plus récente peut exécuter les validations sans changer le bytecode cible.
 
 ## Intégration continue
 

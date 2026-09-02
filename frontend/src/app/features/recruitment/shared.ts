@@ -1,0 +1,3 @@
+import { ApiError } from '../../core/models/api.models';
+export function message(error:unknown){const e=error as Partial<ApiError>;return e.message||`Erreur ${e.status||''}`.trim();}
+export const pageHeader=`<nav class="recruitment-nav" aria-label="Navigation recrutement"><a routerLink="/app/recrutement/dashboard">Dashboard</a><a routerLink="/app/recrutement/offres">Offres</a><a routerLink="/app/recrutement/candidats">Candidats</a><a routerLink="/app/recrutement/candidatures">Candidatures</a><a routerLink="/app/recrutement/pipeline">Pipeline</a><a routerLink="/app/recrutement/entretiens">Entretiens</a></nav>`;
