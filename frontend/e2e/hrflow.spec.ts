@@ -1,8 +1,8 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 
-const email = process.env['E2E_ADMIN_EMAIL'] ?? 'e2e.admin@hrflow.local';
-const password = process.env['E2E_ADMIN_PASSWORD'] ?? 'E2eAdminPassword!2026';
+const email = process.env['E2E_ADMIN_EMAIL'] ?? 'admin@hrflow.local';
+const password = process.env['E2E_ADMIN_PASSWORD'] ?? 'NewAdminPassword!2026';
 
 async function login(page: import('@playwright/test').Page) {
   await page.goto('/connexion');

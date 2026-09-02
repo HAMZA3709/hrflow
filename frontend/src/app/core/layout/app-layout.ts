@@ -59,6 +59,12 @@ export class AppLayout {
         roles: ['ADMIN', 'HR', 'MANAGER', 'EMPLOYEE'],
       },
       {
+        label: role === 'EMPLOYEE' ? 'Mes entretiens' : 'Recrutement',
+        path: role === 'EMPLOYEE' ? '/app/recrutement/entretiens' : '/app/recrutement',
+        icon: '◎',
+        roles: ['ADMIN', 'HR', 'MANAGER', 'EMPLOYEE'],
+      },
+      {
         label: 'Mon profil',
         path: '/app/profil',
         icon: '○',
