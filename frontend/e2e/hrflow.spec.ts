@@ -1,8 +1,55 @@
 import AxeBuilder from '@axe-core/playwright';
-import { expect, test } from '@playwright/test';
+import { expect, test, type APIResponse, type Page } from '@playwright/test';
 
 const email = process.env['E2E_ADMIN_EMAIL'] ?? 'admin@hrflow.local';
 const password = process.env['E2E_ADMIN_PASSWORD'] ?? 'NewAdminPassword!2026';
+
+async function responseDetails(response: APIResponse) {
+  const request = response.request();
+  const body = await response.text().catch((error: unknown) => `<unavailable: ${String(error)}>`);
+  return `${request.method()} ${response.url()} -> ${response.status()}\nBody: ${body || '<empty>'}`;
+}
+
+async function expectHttpStatus(response: APIResponse, status: number) {
+  if (response.status() === status) return;
+  expect(response.status(), await responseDetails(response)).toBe(status);
+}
+
+function isApiResponse(response: APIResponse, method: string, path: string) {
+  return response.request().method() === method && new URL(response.url()).pathname === path;
+}
+
+async function clickAndWaitForResponse(
+  page: Page,
+  method: string,
+  path: string,
+  click: () => Promise<void>,
+) {
+  const responsePromise = page.waitForResponse((response) => isApiResponse(response, method, path));
+  await click();
+  return responsePromise;
+}
+
+function availableLeavePeriod(
+  existing: { startDate: string; endDate: string }[],
+  projectName: string,
+) {
+  const candidate = new Date();
+  candidate.setUTCHours(0, 0, 0, 0);
+  candidate.setUTCDate(candidate.getUTCDate() + (projectName === 'mobile' ? 180 : 45));
+
+  while (true) {
+    const end = new Date(candidate);
+    end.setUTCDate(end.getUTCDate() + 2);
+    const startDate = candidate.toISOString().slice(0, 10);
+    const endDate = end.toISOString().slice(0, 10);
+    const overlaps = existing.some(
+      (leave) => leave.startDate <= endDate && leave.endDate >= startDate,
+    );
+    if (!overlaps) return { startDate, endDate };
+    candidate.setUTCDate(candidate.getUTCDate() + 4);
+  }
+}
 
 async function login(page: import('@playwright/test').Page) {
   await page.goto('/connexion');
@@ -31,7 +78,13 @@ test.describe('HRFlow réel', () => {
     await expect(submit).toBeDisabled();
     await page.getByLabel('Adresse email').fill(resetEmail);
     await expect(submit).toBeEnabled();
-    await submit.click();
+    const forgotResponse = await clickAndWaitForResponse(
+      page,
+      'POST',
+      '/api/v1/auth/forgot-password',
+      () => submit.click(),
+    );
+    await expectHttpStatus(forgotResponse, 200);
     await expect(page.getByText('Si le compte existe, un email a été envoyé.')).toBeVisible();
 
     let token = '';
@@ -44,8 +97,7 @@ test.describe('HRFlow réel', () => {
               item.To?.some((recipient) => recipient.Address === resetEmail) &&
               item.Subject.includes('Réinitialisation'),
           );
-          token =
-            /reset-password\?token=([A-Za-z0-9_-]+)/.exec(summary?.Snippet ?? '')?.[1] ?? '';
+          token = /reset-password\?token=([A-Za-z0-9_-]+)/.exec(summary?.Snippet ?? '')?.[1] ?? '';
           return token;
         },
         { timeout: 15_000 },
@@ -156,24 +208,54 @@ test.describe('HRFlow réel', () => {
     const accounts = employeeForm.getByLabel('Compte utilisateur');
     if ((await accounts.locator('option').allTextContents()).includes(email))
       await accounts.selectOption({ label: email });
-    await page.getByRole('button', { name: 'Enregistrer' }).click();
+    const employeeResponse = await clickAndWaitForResponse(page, 'POST', '/api/v1/employees', () =>
+      page.getByRole('button', { name: 'Enregistrer' }).click(),
+    );
+    await expectHttpStatus(employeeResponse, 201);
+    const createdEmployee = (await employeeResponse.json()) as { id?: number };
+    expect(createdEmployee.id, await responseDetails(employeeResponse)).toEqual(expect.any(Number));
     await expect(page.getByText('Employé enregistré.')).toBeVisible();
+    const accessToken = await page.evaluate(() => sessionStorage.getItem('hrflow_access_token'));
+    expect(accessToken).not.toBeNull();
+    const leavesResponse = await page.request.get('/api/v1/leave-requests?size=200', {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    await expectHttpStatus(leavesResponse, 200);
+    const existingLeaves = (await leavesResponse.json()) as {
+      content?: { startDate: string; endDate: string }[];
+    };
     await navigate(page, /Congés/);
     await page.getByRole('button', { name: 'Nouvelle demande' }).click();
-    const startDate = new Date();
-    startDate.setUTCDate(startDate.getUTCDate() + 30 + (Number(suffix) % 240));
-    if (testInfo.project.name === 'mobile') startDate.setUTCDate(startDate.getUTCDate() + 3);
-    const endDate = new Date(startDate);
-    endDate.setUTCDate(endDate.getUTCDate() + 2);
-    const start = startDate.toISOString().slice(0, 10);
-    const end = endDate.toISOString().slice(0, 10);
+    const { startDate: start, endDate: end } = availableLeavePeriod(
+      existingLeaves.content ?? [],
+      testInfo.project.name,
+    );
     await page.getByLabel('Début').fill(start);
     await page.getByLabel('Fin').fill(end);
     await page.getByLabel('Motif').fill('Validation du workflow');
-    await page.getByRole('button', { name: 'Envoyer' }).click();
+    const createLeaveResponse = await clickAndWaitForResponse(
+      page,
+      'POST',
+      '/api/v1/leave-requests',
+      () => page.getByRole('button', { name: 'Envoyer' }).click(),
+    );
+    await expectHttpStatus(createLeaveResponse, 201);
+    const createdLeave = (await createLeaveResponse.json()) as {
+      id?: number;
+      employeeId?: number;
+      startDate?: string;
+      endDate?: string;
+    };
+    expect(createdLeave, await responseDetails(createLeaveResponse)).toMatchObject({
+      id: expect.any(Number),
+      employeeId: expect.any(Number),
+      startDate: start,
+      endDate: end,
+    });
     await expect(page.getByText('Demande envoyée.')).toBeVisible();
     page.once('dialog', (dialog) => dialog.accept('Validé par E2E'));
-    await page.getByRole('button', { name: 'Approuver' }).first().click();
+    const leaveCard = page.locator('article.panel').filter({ hasText: `${start} → ${end}` });
+    await leaveCard.getByRole('button', { name: 'Approuver' }).click();
     await expect(page.getByText('Décision enregistrée.')).toBeVisible();
   });
 });
