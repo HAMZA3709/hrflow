@@ -1,5 +1,5 @@
 package com.hrflow.platform.recruitment;
-import jakarta.validation.constraints.*; import java.time.*; import java.util.Map;
+import jakarta.validation.constraints.*; import java.time.*; import java.util.List; import java.util.Map;
 public final class RecruitmentDtos {private RecruitmentDtos(){}
  public record JobOfferInput(@NotBlank @Size(max=40)String reference,@NotBlank @Size(max=160)String title,@NotBlank @Size(max=20000)String description,@NotBlank @Size(max=20000)String requirements,@NotBlank @Size(max=160)String location,@NotNull EmploymentType employmentType,@NotNull Long departmentId,Long hiringManagerId,@FutureOrPresent LocalDate closingDate){}
  public record JobOfferView(Long id,String reference,String title,String description,String requirements,String location,EmploymentType employmentType,JobOfferStatus status,Long departmentId,String departmentName,Long hiringManagerId,Instant publishedAt,LocalDate closingDate,Instant createdAt,Instant updatedAt){}
@@ -16,4 +16,5 @@ public final class RecruitmentDtos {private RecruitmentDtos(){}
  public record CvView(Long id,Long candidateId,String originalFilename,String contentType,long size,String checksum,Instant uploadedAt){}
  public record RecruitmentDashboard(long activeOffers,long totalApplications,Map<ApplicationStage,Long>applicationsByStage,long hires,long rejections,double averageHiringDays,long upcomingInterviews){}
  public record AuditView(Long id,String entityType,Long entityId,String action,String actor, String details,Instant occurredAt){}
+ public record AiMatchView(int score,String recommendation,String summary,List<String>strengths,List<String>gaps,List<String>interviewQuestions,String model,Instant analyzedAt,String disclaimer){}
 }

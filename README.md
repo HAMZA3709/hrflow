@@ -1,8 +1,8 @@
-# HRFlow Backend
+# HRFlow AI — Plateforme RH intelligente et recrutement assisté
 
 [![CI](https://github.com/HAMZA3709/hrflow/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/HAMZA3709/hrflow/actions/workflows/ci.yml)
 
-Plateforme RH avec module Recrutement V2, construite avec Java 21, Spring Boot 3.5, Angular standalone, PostgreSQL 17, Flyway, JWT, Mailpit, Actuator et OpenAPI.
+Plateforme RH intelligente avec recrutement assisté par IA locale, construite avec Java 21, Spring Boot 3.5, Angular standalone, PostgreSQL 17, Ollama, Flyway, JWT, Mailpit, Actuator et OpenAPI.
 
 ## Architecture
 
@@ -23,14 +23,17 @@ Permissions : ADMIN et HR gèrent tout ; MANAGER ne voit que ses offres et candi
 cp .env.example .env
 # Remplacer DB_PASSWORD et JWT_SECRET dans .env
 openssl rand -base64 48   # génération recommandée de JWT_SECRET
+docker compose up -dcd ~/IdeaProjects/hrflow
 docker compose up -d
+docker compose ps
+
 set -a; . ./.env; set +a
 ./mvnw spring-boot:run
 ```
 
 Le fichier `.env` est ignoré par Git. En production, ne pas activer le profil `dev` et fournir obligatoirement `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, `JWT_SECRET`, `MAIL_HOST` et `MAIL_PORT`. L'administrateur initial n'est créé que si `INITIAL_ADMIN_EMAIL` et `INITIAL_ADMIN_PASSWORD` (12 caractères minimum) sont fournis ; aucun mot de passe par défaut n'existe.
 
-Services locaux : API `http://localhost:8080`, Swagger `http://localhost:8080/swagger-ui.html`, Mailpit `http://localhost:8025`, health `http://localhost:8080/actuator/health`. Les métriques détaillées et Prometheus requièrent un JWT ADMIN.
+Services locaux : API `http://localhost:8080`, Swagger ``, Mailpit `http://localhost:8025`, health `http://localhost:8080/actuator/health`. Les métriques détaillées et Prometheus requièrent un JWT ADMIN.
 
 ## API v1
 
@@ -68,6 +71,19 @@ Les tests Testcontainers utilisent PostgreSQL 17 et un vrai serveur Mailpit, jam
 Les CV sont limités au PDF et à `CV_MAX_SIZE` octets (5 Mio par défaut). Leur signature `%PDF-` est contrôlée, le nom serveur est un UUID, le SHA-256 est conservé et le chemin interne n’est jamais exposé. `CV_STORAGE_DIRECTORY` doit pointer vers un volume local hors dépôt (par défaut `/tmp/hrflow-cv`) et être sauvegardé séparément en production. Le nom d’origine sert uniquement à l’en-tête de téléchargement. Limitation V2 : pas de stockage objet ni d’antivirus asynchrone. `CvStorageService` constitue le point d’extension prévu pour brancher un scanner antivirus avant l’écriture et remplacer le stockage local par un adaptateur objet.
 
 Les pages Angular lazy-loaded sont disponibles sous `/app/recrutement` : dashboard, listes/détails/édition des offres, candidats et CV, candidatures avec audit, Kanban clavier, entretiens et évaluations. Tous les écrans consomment l’API réelle.
+
+## Analyse locale des CV avec Ollama
+
+La fiche d’une candidature propose une analyse assistée du CV par rapport à l’offre : score indicatif, synthèse, points forts, éléments à vérifier et questions d’entretien. Le résultat ne rejette ni ne fait avancer automatiquement une candidature ; la décision reste humaine. L’appel est réservé aux rôles ADMIN, HR et au manager autorisé, puis inscrit dans l’audit de la candidature.
+
+Ollama est optionnel et s’exécute localement :
+
+```bash
+docker compose --profile ai up -d ollama
+docker exec hrflow-ollama ollama pull qwen2.5:7b
+```
+
+Le backend utilise `OLLAMA_BASE_URL=http://localhost:11434` et `OLLAMA_MODEL=qwen2.5:7b` par défaut. Ces valeurs, le délai `OLLAMA_TIMEOUT` et la limite `AI_MAX_CV_CHARACTERS` sont configurables dans `.env`. Un CV PDF contenant du texte est requis ; les documents scannés doivent d’abord passer par un OCR. Aucun service IA cloud n’est appelé.
 
 Les timers Micrometer `hrflow.recruitment.application.{create,transition,hire,reject}.duration`, `hrflow.recruitment.interview.schedule.duration` et `hrflow.recruitment.cv.upload.duration` mesurent les opérations importantes sans tag ni donnée personnelle. L’environnement cible reste strictement JDK 21 (`maven.compiler.release=21`) ; une JVM locale plus récente peut exécuter les validations sans changer le bytecode cible.
 

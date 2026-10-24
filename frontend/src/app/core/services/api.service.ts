@@ -11,7 +11,7 @@ import {
   Page,
   Role,
   User,
-  Application, ApplicationStage, Candidate, CvDocument, Evaluation, Interview, JobOffer, RecruitmentAudit, RecruitmentDashboard,
+  AiMatchAnalysis, Application, ApplicationStage, Candidate, CvDocument, Evaluation, Interview, JobOffer, RecruitmentAudit, RecruitmentDashboard,
 } from '../models/api.models';
 type Params = Record<string, string | number | boolean | undefined | null>;
 @Injectable({ providedIn: 'root' })
@@ -100,6 +100,7 @@ export class ApiService {
   applications(p:Params={}){return this.http.get<Page<Application>>(`${environment.apiUrl}/recruitment/applications`,{params:this.params(p)});}
   application(id:number){return this.http.get<Application>(`${environment.apiUrl}/recruitment/applications/${id}`);}
   applicationAudit(id:number){return this.http.get<Page<RecruitmentAudit>>(`${environment.apiUrl}/recruitment/applications/${id}/audit`);}
+  analyzeApplication(id:number){return this.http.post<AiMatchAnalysis>(`${environment.apiUrl}/recruitment/applications/${id}/ai-analysis`,{});}
   createApplication(v:{candidateId:number;jobOfferId:number;source:string;notes:string|null}){return this.http.post<Application>(`${environment.apiUrl}/recruitment/applications`,v);}
   transitionApplication(id:number,stage:ApplicationStage){return this.http.patch<Application>(`${environment.apiUrl}/recruitment/applications/${id}/stage`,{stage});}
   rejectApplication(id:number,reason:string){return this.http.patch<Application>(`${environment.apiUrl}/recruitment/applications/${id}/reject`,{reason});}

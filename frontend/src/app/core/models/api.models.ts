@@ -108,3 +108,4 @@ export interface Evaluation { id:number;interviewId:number;evaluatorId:number;te
 export interface CvDocument { id:number;candidateId:number;originalFilename:string;contentType:string;size:number;checksum:string;uploadedAt:string; }
 export interface RecruitmentDashboard {activeOffers:number;totalApplications:number;applicationsByStage:Partial<Record<ApplicationStage,number>>;hires:number;rejections:number;averageHiringDays:number;upcomingInterviews:number;}
 export interface RecruitmentAudit {id:number;entityType:string;entityId:number;action:string;actor:string|null;details:string|null;occurredAt:string;}
+export interface AiMatchAnalysis {score:number;recommendation:'STRONG_MATCH'|'POTENTIAL_MATCH'|'REVIEW_REQUIRED'|'LOW_MATCH';summary:string;strengths:string[];gaps:string[];interviewQuestions:string[];model:string;analyzedAt:string;disclaimer:string;}

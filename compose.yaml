@@ -31,7 +31,16 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+  ollama:
+    image: ollama/ollama:latest
+    container_name: hrflow-ollama
+    profiles: ["ai"]
+    ports:
+      - "11434:11434"
+    volumes:
+      - hrflow_ollama_data:/root/.ollama
 
 volumes:
   hrflow_postgres_data:
   hrflow_mailpit_data:
+  hrflow_ollama_data:
